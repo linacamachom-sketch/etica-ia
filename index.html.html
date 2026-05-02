@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>¿Quién quiere ser el experto en Ética IA?</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Source Sans 3', sans-serif;
+    background: #080818;
+    min-height: 100vh;
+    color: #e8e0d0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  #game-root {
+    width: 100%;
+    max-width: 720px;
+    background: #0a0a1a;
+    border-radius: 20px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 80px rgba(245,200,66,0.08), 0 0 0 1px rgba(245,200,66,0.12);
+    min-height: 600px;
+  }
+  .bg-fill {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at 20% 20%, #1a1040 0%, transparent 55%),
+                radial-gradient(ellipse at 80% 80%, #0d1a30 0%, transparent 55%), #080818;
+    z-index: 0;
+  }
+  .content { position: relative; z-index: 1; padding: 32px; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  .intro-center { text-align: center; padding: 40px 10px; }
+  .game-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 32px; font-weight: 900;
+    color: #f5c842;
+    text-shadow: 0 0 40px rgba(245,200,66,0.25);
+    line-height: 1.2; margin-bottom: 8px;
+  }
+  .game-subtitle { font-size: 12px; color: #8899bb; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 36px; }
+  .intro-card {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(245,200,66,0.2);
+    border-radius: 14px; padding: 22px; margin-bottom: 16px; text-align: left;
+  }
+  .intro-card h3 { color: #f5c842; font-size: 12px; margin-bottom: 14px; letter-spacing: 2px; text-transform: uppercase; }
+  .prizes-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .prize-item { text-align: center; background: rgba(255,255,255,0.04); border-radius: 10px; padding: 12px 6px; border: 1px solid rgba(255,255,255,0.07); }
+  .prize-pts { font-size: 22px; font-weight: 700; color: #f5c842; }
+  .prize-label { font-size: 12px; color: #aaa; margin-top: 3px; }
+  .lifelines-list { display: flex; flex-direction: column; gap: 10px; }
+  .lifeline-item { display: flex; align-items: center; gap: 12px; font-size: 14px; color: #d0c8b8; }
+  .lifeline-icon {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: rgba(245,200,66,0.12); border: 1px solid rgba(245,200,66,0.4);
+    display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0;
+    color: #f5c842; font-weight: 700;
+  }
+  .btn-start {
+    background: linear-gradient(135deg, #f5c842, #e8a020); color: #0a0a1a;
+    border: none; border-radius: 50px; padding: 15px 52px;
+    font-size: 17px; font-weight: 700; cursor: pointer; margin-top: 24px;
+    letter-spacing: 1px; transition: transform 0.15s, box-shadow 0.15s;
+    font-family: 'Source Sans 3', sans-serif;
+    box-shadow: 0 4px 24px rgba(245,200,66,0.25);
+  }
+  .btn-start:hover { transform: scale(1.05); box-shadow: 0 6px 32px rgba(245,200,66,0.4); }
+
+  .q-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+  .q-meta .q-num { font-size: 12px; color: #8899bb; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px; }
+  .q-score { font-family: 'Playfair Display', serif; font-size: 22px; color: #f5c842; font-weight: 700; }
+  .difficulty-badge { font-size: 11px; padding: 4px 14px; border-radius: 20px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; display: inline-block; }
+  .diff-easy { background: rgba(29,158,117,0.2); color: #5dcaa5; border: 1px solid rgba(29,158,117,0.4); }
+  .diff-medium { background: rgba(186,117,23,0.2); color: #f5c842; border: 1px solid rgba(186,117,23,0.4); }
+  .diff-hard { background: rgba(226,75,74,0.2); color: #f09595; border: 1px solid rgba(226,75,74,0.4); }
+
+  .timer-wrap { margin-bottom: 20px; }
+  .timer-bar-bg { height: 7px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; }
+  .timer-bar { height: 100%; border-radius: 4px; background: #f5c842; transition: width 1s linear, background 0.5s; }
+  .timer-text { font-size: 12px; color: #8899bb; text-align: right; margin-top: 5px; }
+
+  .q-box { background: rgba(245,200,66,0.06); border: 1px solid rgba(245,200,66,0.25); border-radius: 14px; padding: 22px 26px; margin-bottom: 20px; }
+  .q-text { font-family: 'Playfair Display', serif; font-size: 17px; line-height: 1.65; color: #f5f0e8; font-weight: 700; }
+
+  .lifelines-row { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .ll-btn {
+    background: rgba(245,200,66,0.1); border: 1px solid rgba(245,200,66,0.4);
+    border-radius: 9px; padding: 8px 16px; color: #f5c842;
+    font-size: 13px; cursor: pointer; font-family: 'Source Sans 3', sans-serif;
+    font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 7px;
+  }
+  .ll-btn:hover:not(:disabled) { background: rgba(245,200,66,0.2); }
+  .ll-btn:disabled { opacity: 0.2; cursor: default; border-color: rgba(255,255,255,0.1); color: #666; }
+
+  .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
+  .opt-btn {
+    background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 12px; padding: 16px 18px; color: #f0e8d8;
+    font-size: 14px; line-height: 1.4; cursor: pointer; text-align: left;
+    transition: all 0.2s; font-family: 'Source Sans 3', sans-serif;
+    display: flex; align-items: flex-start; gap: 12px;
+  }
+  .opt-btn:hover:not(:disabled) { border-color: rgba(245,200,66,0.6); background: rgba(245,200,66,0.1); color: #fff; }
+  .opt-btn:disabled { cursor: default; }
+  .opt-letter { font-weight: 700; color: #f5c842; min-width: 18px; font-size: 14px; flex-shrink: 0; }
+  .opt-text { color: #f0e8d8; }
+  .opt-btn.correct { background: rgba(29,158,117,0.22); border-color: #1d9e75; }
+  .opt-btn.correct .opt-letter, .opt-btn.correct .opt-text { color: #7de8c0; }
+  .opt-btn.wrong { background: rgba(226,75,74,0.18); border-color: #e24b4a; }
+  .opt-btn.wrong .opt-letter, .opt-btn.wrong .opt-text { color: #f09595; }
+  .opt-btn.reveal-correct { background: rgba(29,158,117,0.22); border-color: #1d9e75; }
+  .opt-btn.reveal-correct .opt-letter, .opt-btn.reveal-correct .opt-text { color: #7de8c0; }
+  .opt-btn.eliminated { opacity: 0.12; pointer-events: none; }
+
+  .feedback-box {
+    background: rgba(255,255,255,0.04); border-radius: 11px;
+    padding: 15px 18px; font-size: 13px; line-height: 1.6; color: #d0c8b8;
+    border-left: 3px solid #f5c842; margin-bottom: 16px; display: none;
+  }
+  .feedback-box.show { display: block; }
+  .btn-next {
+    background: linear-gradient(135deg, #f5c842, #e8a020); color: #0a0a1a;
+    border: none; border-radius: 50px; padding: 13px 40px;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+    font-family: 'Source Sans 3', sans-serif; transition: transform 0.15s; display: none;
+  }
+  .btn-next.show { display: inline-block; }
+  .btn-next:hover { transform: scale(1.04); }
+
+  .audience-wrap { text-align: center; margin-bottom: 16px; display: none; }
+  .aud-title { font-size: 12px; color: #8899bb; margin-bottom: 10px; }
+  .audience-bars { display: flex; gap: 10px; align-items: flex-end; height: 70px; justify-content: center; }
+  .a-bar-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .a-bar { width: 40px; background: rgba(245,200,66,0.4); border-radius: 5px 5px 0 0; border: 1px solid rgba(245,200,66,0.65); transition: height 0.5s; }
+  .a-bar-lbl { font-size: 12px; color: #8899bb; }
+  .a-bar-pct { font-size: 12px; color: #f5c842; font-weight: 700; }
+
+  .toast {
+    position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
+    background: rgba(10,10,26,0.95); border: 1px solid rgba(245,200,66,0.5);
+    color: #f5c842; padding: 10px 24px; border-radius: 50px;
+    font-size: 14px; font-weight: 600; z-index: 100;
+    opacity: 0; transition: opacity 0.3s; white-space: nowrap; pointer-events: none;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  }
+
+  .end-center { text-align: center; padding: 40px 16px; }
+  .end-medal { font-size: 60px; display: block; margin-bottom: 14px; }
+  .end-title { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 900; color: #f5f0e8; margin-bottom: 10px; }
+  .end-label { font-size: 13px; color: #8899bb; }
+  .end-score-big { font-family: 'Playfair Display', serif; font-size: 60px; font-weight: 900; color: #f5c842; line-height: 1.1; margin: 14px 0; }
+  .results-breakdown { display: flex; justify-content: center; gap: 18px; margin: 18px 0; flex-wrap: wrap; }
+  .res-stat { text-align: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px 24px; }
+  .res-num { font-size: 26px; font-weight: 700; color: #f5c842; }
+  .res-lbl { font-size: 12px; color: #8899bb; margin-top: 3px; }
+  .end-message { font-size: 14px; color: #b0a898; max-width: 440px; margin: 0 auto 28px; line-height: 1.7; }
+</style>
+</head>
+<body>
+
+<div id="game-root">
+  <div class="bg-fill"></div>
+  <div class="toast" id="toast"></div>
+  <div class="content">
+
+    <div class="screen active" id="screen-intro">
+      <div class="intro-center">
+        <div class="game-title">¿Quién quiere ser<br>el experto en Ética IA?</div>
+        <div class="game-subtitle">Dilemas éticos · Inteligencia Artificial</div>
+        <div class="intro-card">
+          <h3>Puntaje por dificultad</h3>
+          <div class="prizes-grid">
+            <div class="prize-item"><div class="prize-pts">100</div><div class="prize-label">Fácil</div></div>
+            <div class="prize-item"><div class="prize-pts">500</div><div class="prize-label">Medio</div></div>
+            <div class="prize-item"><div class="prize-pts">1000</div><div class="prize-label">Difícil</div></div>
+          </div>
+        </div>
+        <div class="intro-card">
+          <h3>Tus comodines</h3>
+          <div class="lifelines-list">
+            <div class="lifeline-item"><div class="lifeline-icon">50</div><span>50/50 — Elimina 2 respuestas incorrectas</span></div>
+            <div class="lifeline-item"><div class="lifeline-icon">☎</div><span>Llamar a un amigo — Pista clave de la pregunta</span></div>
+            <div class="lifeline-item"><div class="lifeline-icon">👥</div><span>Preguntar al público — El público vota</span></div>
+          </div>
+        </div>
+        <div style="font-size:13px;color:#8899bb;margin-bottom:4px;">30 segundos · 12 preguntas · 1 comodín de cada tipo</div>
+        <button class="btn-start" onclick="startGame()">¡Comenzar!</button>
+      </div>
+    </div>
+
+    <div class="screen" id="screen-question">
+      <div class="q-header">
+        <div class="q-meta">
+          <div class="q-num" id="q-num-label">Pregunta 1 / 12</div>
+          <div id="q-diff-badge" class="difficulty-badge diff-easy">Fácil +100</div>
+        </div>
+        <div class="q-score" id="score-display">0 pts</div>
+      </div>
+      <div class="timer-wrap">
+        <div class="timer-bar-bg"><div class="timer-bar" id="timer-bar" style="width:100%"></div></div>
+        <div class="timer-text" id="timer-text">30s</div>
+      </div>
+      <div class="q-box"><div class="q-text" id="q-text">...</div></div>
+      <div class="lifelines-row">
+        <button class="ll-btn" id="ll-5050" onclick="use5050()">✂ 50/50</button>
+        <button class="ll-btn" id="ll-amigo" onclick="useAmigo()">☎ Llamar amigo</button>
+        <button class="ll-btn" id="ll-publico" onclick="usePublico()">👥 Público</button>
+      </div>
+      <div class="audience-wrap" id="audience-display">
+        <div class="aud-title">El público ha votado...</div>
+        <div class="audience-bars" id="aud-bars"></div>
+      </div>
+      <div class="options-grid" id="options-grid"></div>
+      <div class="feedback-box" id="feedback-box"></div>
+      <button class="btn-next" id="btn-next" onclick="nextQuestion()">Siguiente →</button>
+    </div>
+
+    <div class="screen" id="screen-end">
+      <div class="end-center">
+        <span class="end-medal" id="end-medal">🏆</span>
+        <div class="end-title" id="end-title">¡Resultado final!</div>
+        <div class="end-label">Puntaje total</div>
+        <div class="end-score-big" id="end-score">0 pts</div>
+        <div class="results-breakdown">
+          <div class="res-stat"><div class="res-num" id="end-correct">0</div><div class="res-lbl">Correctas</div></div>
+          <div class="res-stat"><div class="res-num" id="end-wrong">0</div><div class="res-lbl">Incorrectas</div></div>
+          <div class="res-stat"><div class="res-num" id="end-maxscore">0</div><div class="res-lbl">Puntaje máx.</div></div>
+        </div>
+        <div class="end-message" id="end-message"></div>
+        <button class="btn-start" onclick="resetGame()">Jugar de nuevo</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const QUESTIONS = [
+  {
+    q: "Una IA de reclutamiento analiza currículums y rechaza sistemáticamente a mujeres porque fue entrenada con datos históricos donde la mayoría de empleados exitosos eran hombres. ¿Quién es el principal responsable ético?",
+    opts: ["La IA, porque es ella quien toma la decisión", "La empresa que desplegó el sistema sin auditar sus sesgos", "Las mujeres que no presentaron mejores hojas de vida", "Nadie, porque la IA es objetiva por definición"],
+    correct: 1, diff: "easy", pts: 100,
+    feedback: "La empresa que despliega una IA sin revisar sus sesgos asume responsabilidad ética y legal. Los algoritmos reflejan las injusticias históricas de sus datos de entrenamiento, y es obligación humana auditarlos antes de usarlos en decisiones que afectan vidas.",
+    hint: "Piensa en quién tomó la decisión de usar ese sistema sin verificar si era justo...",
+    audience: [5, 72, 4, 19]
+  },
+  {
+    q: "Un médico usa una IA que recomienda tratamientos. El sistema da una respuesta incorrecta que el médico sigue sin cuestionar, causando daño al paciente. Este fenómeno se llama:",
+    opts: ["Inteligencia artificial débil", "Sesgo de automatización", "Error de calibración", "Fallo de red neuronal"],
+    correct: 1, diff: "easy", pts: 100,
+    feedback: "El sesgo de automatización es la tendencia a seguir sin cuestionar las recomendaciones de un sistema automatizado. Es un dilema ético clave: la IA puede aumentar nuestras capacidades, pero también hacernos delegar decisiones críticas sin pensar.",
+    hint: "Es un sesgo que ocurre cuando confiamos demasiado en lo que dice la máquina...",
+    audience: [8, 65, 18, 9]
+  },
+  {
+    q: "Una red social usa IA para maximizar el tiempo que pasas en la app, mostrándote contenido que genera indignación porque capta más atención. ¿Cuál es el dilema ético central?",
+    opts: ["La IA no debería tener acceso a internet", "El bienestar del usuario se sacrifica por el beneficio económico de la empresa", "Los usuarios deberían pagar por usar redes sociales", "No hay dilema: cada quien decide cuánto tiempo pasa en su celular"],
+    correct: 1, diff: "easy", pts: 100,
+    feedback: "La IA optimiza la atención del usuario como recurso económico. El problema ético es que lo que maximiza el enganche no siempre maximiza el bienestar, y el usuario raramente es consciente de esa manipulación.",
+    hint: "¿Cuyos intereses prioriza realmente el sistema: los tuyos o los de la empresa?",
+    audience: [4, 78, 10, 8]
+  },
+  {
+    q: "Un sistema de IA decide si una persona en libertad condicional representa un 'riesgo alto' de reincidir. Se descubre que clasifica a personas negras como de alto riesgo el doble de veces que a personas blancas con el mismo perfil. ¿Cuál principio ético se viola principalmente?",
+    opts: ["Privacidad de datos", "Equidad y no discriminación", "Transparencia técnica", "Robustez del sistema"],
+    correct: 1, diff: "medium", pts: 500,
+    feedback: "Se viola el principio de equidad y no discriminación. Este es el caso real del algoritmo COMPAS en EE.UU., que evidenció cómo los sistemas judiciales de IA pueden perpetuar el racismo sistémico.",
+    hint: "Cuando un sistema trata diferente a personas similares por su raza, ¿qué principio se rompe?",
+    audience: [10, 65, 18, 7]
+  },
+  {
+    q: "Una empresa de IA afirma que su modelo de contratación es 'neutral y objetivo' pero se niega a revelar cómo funciona porque es 'propiedad intelectual'. ¿Cuál es el problema ético?",
+    opts: ["La empresa tiene derecho a proteger su código", "Sin transparencia es imposible auditar si el sistema discrimina o comete errores", "Los algoritmos siempre son neutrales si se programan bien", "Solo los expertos necesitan entender cómo funciona la IA"],
+    correct: 1, diff: "medium", pts: 500,
+    feedback: "La falta de transparencia convierte a la IA en una 'caja negra': nadie puede verificar si es justa ni corregir sus errores. La opacidad choca directamente con el principio de transparencia, que exige que los afectados puedan comprender y cuestionar las decisiones que los impactan.",
+    hint: "Si no puedes ver cómo funciona algo que decide sobre tu vida, ¿puedes confiar en que es justo?",
+    audience: [12, 68, 11, 9]
+  },
+  {
+    q: "Un algoritmo de publicidad muestra anuncios de empleos bien remunerados mayoritariamente a hombres. Nadie lo programó explícitamente así: simplemente 'aprendió' de los datos. ¿Quién debe responsabilizarse?",
+    opts: ["Nadie, porque fue un proceso automático sin intención", "Solo los ingenieros que escribieron el código inicial", "La empresa que lo despliega, aunque sea un proceso emergente", "Los usuarios que generaron los datos de entrenamiento"],
+    correct: 2, diff: "medium", pts: 500,
+    feedback: "La responsabilidad no desaparece porque el resultado sea 'emergente'. La empresa que despliega el sistema tiene la obligación de monitorear y corregir resultados discriminatorios, independientemente de si fueron intencionales.",
+    hint: "El hecho de que nadie lo programara 'explícitamente' no borra la responsabilidad de quien decide usarlo...",
+    audience: [18, 15, 58, 9]
+  },
+  {
+    q: "Un coche autónomo, en una situación inevitable de accidente, debe elegir entre atropellar a un anciano o a un niño. ¿Cuál es la posición ética más aceptada frente a este dilema?",
+    opts: ["La IA debe siempre proteger al pasajero del vehículo sin importar lo demás", "No se le debería programar para hacer esa elección: la IA no debe decidir quién vale más", "La IA debe calcular cuántos años de vida le quedan a cada persona y elegir al más joven", "Es un dilema irresolvable, así que los coches autónomos no deben existir"],
+    correct: 1, diff: "hard", pts: 1000,
+    feedback: "Codificar jerarquías de valor humano es éticamente inaceptable. La posición más extendida es que diseñar algoritmos que 'elijan víctimas' instrumentaliza la vida humana. El debate real es sobre quién asume la responsabilidad cuando la IA inevitablemente causa daño.",
+    hint: "¿Deberíamos diseñar sistemas que decidan cuánto vale cada vida humana?",
+    audience: [22, 48, 20, 10]
+  },
+  {
+    q: "Un gobierno usa reconocimiento facial con IA para identificar a manifestantes políticos en espacios públicos, argumentando que es para 'seguridad ciudadana'. El dilema ético central es:",
+    opts: ["La tecnología no es suficientemente precisa todavía", "La vigilancia masiva puede suprimir libertades civiles y criminalizar la disidencia política", "Solo debería usarse si los ciudadanos votan a favor", "Es aceptable si el gobierno es democráticamente elegido"],
+    correct: 1, diff: "hard", pts: 1000,
+    feedback: "La vigilancia masiva con reconocimiento facial crea un efecto inhibidor sobre la libertad de expresión y reunión. Cuando el Estado puede identificar a todos los manifestantes, el costo de disentir sube dramáticamente, lo que corroe la democracia.",
+    hint: "Si sabes que te están identificando y grabando, ¿te comportarías diferente en una protesta?",
+    audience: [5, 72, 14, 9]
+  },
+  {
+    q: "Una IA generativa crea deepfakes realistas de políticos diciendo cosas que nunca dijeron, usados en campaña electoral. ¿Cuál es la amenaza ética más grave?",
+    opts: ["Que los deepfakes sean de mala calidad visual", "La erosión de la confianza en la realidad y la manipulación de la voluntad democrática", "Que los políticos afectados puedan demandar por derechos de imagen", "Que la IA tenga demasiado poder creativo"],
+    correct: 1, diff: "medium", pts: 500,
+    feedback: "Los deepfakes políticos son una amenaza directa a la democracia. Cuando la ciudadanía no puede distinguir lo real de lo fabricado, se vuelve imposible tomar decisiones informadas. La IA generativa plantea el riesgo de un colapso epistémico en el espacio público.",
+    hint: "¿Qué pasa con una democracia cuando los ciudadanos no pueden saber qué es verdad?",
+    audience: [4, 76, 12, 8]
+  },
+  {
+    q: "Una empresa de salud entrena su IA con datos clínicos de pacientes sin pedirles consentimiento explícito, argumentando que los datos fueron 'anonimizados'. ¿Cuál es la posición ética correcta?",
+    opts: ["Es válido si los datos están anonimizados, ya que no hay riesgo real", "El consentimiento informado es un derecho fundamental que no puede reemplazarse con anonimización técnica", "Solo importa el consentimiento si los datos son de menores de edad", "Los avances médicos justifican usar datos sin consentimiento"],
+    correct: 1, diff: "medium", pts: 500,
+    feedback: "La anonimización no reemplaza el consentimiento informado. Los datos de salud son especialmente sensibles, y los pacientes tienen derecho a saber cómo se usan sus datos. Además, la re-identificación de datos 'anónimos' es técnicamente posible.",
+    hint: "¿Puede una persona ceder derechos sobre sus datos sin saberlo, aunque el fin sea médico?",
+    audience: [15, 62, 12, 11]
+  },
+  {
+    q: "Una IA de recursos humanos elimina automáticamente CVs con 'brechas laborales' de más de 6 meses, afectando desproporcionadamente a madres que tomaron licencia de maternidad. Esto ejemplifica:",
+    opts: ["Una decisión empresarial legítima para filtrar candidatos", "Discriminación indirecta: una regla aparentemente neutra que impacta desigualmente a grupos vulnerables", "Un error técnico que hay que corregir en el código", "La necesidad de que las mujeres expliquen mejor sus brechas laborales"],
+    correct: 1, diff: "hard", pts: 1000,
+    feedback: "La discriminación indirecta ocurre cuando una política aparentemente neutra impacta desproporcionadamente a un grupo protegido. La maternidad se convierte en penalización laboral automatizada sin que nadie lo haya decidido explícitamente.",
+    hint: "¿Puede una regla ser 'neutral' si afecta más a ciertos grupos por razones estructurales?",
+    audience: [10, 65, 17, 8]
+  },
+  {
+    q: "Un chatbot de salud mental atiende a personas en crisis. Se descubre que en algunos casos da respuestas que empeoran la situación del usuario. ¿Cuál es el dilema ético más profundo?",
+    opts: ["Que el chatbot no tenga suficientes datos de entrenamiento", "Que la IA no puede reemplazar el juicio ético, la empatía real ni la responsabilidad que exige el cuidado humano en contextos de vulnerabilidad", "Que los psicólogos humanos sean demasiado costosos", "Que los usuarios no sepan usar bien la tecnología"],
+    correct: 1, diff: "hard", pts: 1000,
+    feedback: "Este dilema toca el núcleo de la ética del cuidado: hay contextos donde la vulnerabilidad humana exige presencia, responsabilidad y juicio moral que ninguna IA puede asumir. Delegar el cuidado de personas en crisis a sistemas que no pueden comprender el sufrimiento es una falla moral.",
+    hint: "¿Qué elementos del cuidado humano son irreemplazables, especialmente cuando alguien sufre?",
+    audience: [5, 74, 14, 7]
+  }
+];
+
+let currentQ=0, score=0, correctCount=0, wrongCount=0;
+let timerInterval=null, timeLeft=30, answered=false;
+let lifelines={f5050:true,amigo:true,publico:true};
+
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById('screen-'+id).classList.add('active');}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.opacity='1';setTimeout(()=>t.style.opacity='0',2500);}
+function startGame(){currentQ=0;score=0;correctCount=0;wrongCount=0;lifelines={f5050:true,amigo:true,publico:true};showScreen('question');loadQuestion();}
+function loadQuestion(){
+  answered=false;
+  const q=QUESTIONS[currentQ];
+  document.getElementById('q-num-label').textContent='Pregunta '+(currentQ+1)+' / '+QUESTIONS.length;
+  document.getElementById('score-display').textContent=score.toLocaleString()+' pts';
+  const badge=document.getElementById('q-diff-badge');
+  badge.className='difficulty-badge';
+  if(q.diff==='easy'){badge.classList.add('diff-easy');badge.textContent='Fácil +100';}
+  else if(q.diff==='medium'){badge.classList.add('diff-medium');badge.textContent='Medio +500';}
+  else{badge.classList.add('diff-hard');badge.textContent='Difícil +1000';}
+  document.getElementById('q-text').textContent=q.q;
+  const grid=document.getElementById('options-grid');
+  grid.innerHTML='';
+  ['A','B','C','D'].forEach((l,i)=>{
+    const btn=document.createElement('button');
+    btn.className='opt-btn';btn.id='opt-'+i;
+    btn.innerHTML='<span class="opt-letter">'+l+'</span><span class="opt-text">'+q.opts[i]+'</span>';
+    btn.onclick=()=>selectAnswer(i);
+    grid.appendChild(btn);
+  });
+  document.getElementById('feedback-box').className='feedback-box';
+  document.getElementById('btn-next').className='btn-next';
+  document.getElementById('audience-display').style.display='none';
+  document.getElementById('ll-5050').disabled=!lifelines.f5050;
+  document.getElementById('ll-amigo').disabled=!lifelines.amigo;
+  document.getElementById('ll-publico').disabled=!lifelines.publico;
+  startTimer();
+}
+function startTimer(){clearInterval(timerInterval);timeLeft=30;updateTimer();timerInterval=setInterval(()=>{timeLeft--;updateTimer();if(timeLeft<=0){clearInterval(timerInterval);if(!answered)timeOut();}},1000);}
+function updateTimer(){const pct=(timeLeft/30)*100;const bar=document.getElementById('timer-bar');bar.style.width=pct+'%';bar.style.background=timeLeft<=10?'#e24b4a':'#f5c842';document.getElementById('timer-text').textContent=timeLeft+'s';}
+function timeOut(){answered=true;disableOptions();revealCorrect();wrongCount++;showFeedback('⏰ ¡Tiempo! La correcta era '+['A','B','C','D'][QUESTIONS[currentQ].correct]+'. '+QUESTIONS[currentQ].feedback);showNextBtn();}
+function selectAnswer(idx){
+  if(answered)return;answered=true;clearInterval(timerInterval);disableOptions();
+  const q=QUESTIONS[currentQ];const btn=document.getElementById('opt-'+idx);
+  if(idx===q.correct){btn.classList.add('correct');score+=q.pts;correctCount++;showFeedback('✓ ¡Correcto! '+q.feedback);showToast('+'+q.pts+' puntos');}
+  else{btn.classList.add('wrong');wrongCount++;revealCorrect();showFeedback('✗ Incorrecto. '+q.feedback);}
+  document.getElementById('score-display').textContent=score.toLocaleString()+' pts';
+  showNextBtn();
+}
+function disableOptions(){document.querySelectorAll('.opt-btn').forEach(b=>b.disabled=true);}
+function revealCorrect(){const btn=document.getElementById('opt-'+QUESTIONS[currentQ].correct);if(btn)btn.classList.add('reveal-correct');}
+function showFeedback(msg){const fb=document.getElementById('feedback-box');fb.textContent=msg;fb.className='feedback-box show';}
+function showNextBtn(){const btn=document.getElementById('btn-next');btn.className='btn-next show';btn.textContent=currentQ===QUESTIONS.length-1?'Ver resultados →':'Siguiente →';}
+function nextQuestion(){currentQ++;if(currentQ>=QUESTIONS.length)showEndScreen();else loadQuestion();}
+function showEndScreen(){
+  showScreen('end');
+  const maxScore=QUESTIONS.reduce((a,q)=>a+q.pts,0);
+  const pct=Math.round((score/maxScore)*100);
+  document.getElementById('end-score').textContent=score.toLocaleString()+' pts';
+  document.getElementById('end-correct').textContent=correctCount;
+  document.getElementById('end-wrong').textContent=wrongCount;
+  document.getElementById('end-maxscore').textContent=maxScore.toLocaleString();
+  let medal,title,msg;
+  if(pct>=80){medal='🏆';title='¡Experto en Ética IA!';msg='Tienes una mirada crítica excepcional sobre los dilemas éticos de la inteligencia artificial. ¡Felicitaciones!';}
+  else if(pct>=50){medal='⭐';title='¡Buen resultado!';msg='Tienes una base sólida. Sigue reflexionando sobre los dilemas de sesgos, privacidad y responsabilidad en la IA.';}
+  else{medal='📚';title='¡A seguir pensando!';msg='La ética de la IA es compleja. Cada dilema tiene múltiples capas: lo importante es seguir cuestionando el impacto de la tecnología en la sociedad.';}
+  document.getElementById('end-medal').textContent=medal;
+  document.getElementById('end-title').textContent=title;
+  document.getElementById('end-message').textContent=msg;
+}
+function resetGame(){showScreen('intro');}
+function use5050(){
+  if(!lifelines.f5050||answered)return;lifelines.f5050=false;document.getElementById('ll-5050').disabled=true;
+  const correct=QUESTIONS[currentQ].correct;
+  const wrong=[0,1,2,3].filter(i=>i!==correct).sort(()=>Math.random()-0.5).slice(0,2);
+  wrong.forEach(i=>{const b=document.getElementById('opt-'+i);b.classList.add('eliminated');b.disabled=true;});
+  showToast('50/50 — 2 opciones eliminadas');
+}
+function useAmigo(){
+  if(!lifelines.amigo||answered)return;lifelines.amigo=false;document.getElementById('ll-amigo').disabled=true;
+  showFeedback('☎ Tu amigo dice: "'+QUESTIONS[currentQ].hint+'"');showToast('Llamada a un amigo usada');
+}
+function usePublico(){
+  if(!lifelines.publico||answered)return;lifelines.publico=false;document.getElementById('ll-publico').disabled=true;
+  const q=QUESTIONS[currentQ];
+  const audDiv=document.getElementById('audience-display');const barsDiv=document.getElementById('aud-bars');
+  barsDiv.innerHTML='';const maxVal=Math.max(...q.audience);
+  ['A','B','C','D'].forEach((l,i)=>{
+    const h=Math.round((q.audience[i]/maxVal)*56);
+    const wrap=document.createElement('div');wrap.className='a-bar-wrap';
+    wrap.innerHTML='<div class="a-bar-pct">'+q.audience[i]+'%</div><div class="a-bar" style="height:'+h+'px"></div><div class="a-bar-lbl">'+l+'</div>';
+    barsDiv.appendChild(wrap);
+  });
+  audDiv.style.display='block';showToast('El público ha votado');
+}
+</script>
+</body>
+</html>
